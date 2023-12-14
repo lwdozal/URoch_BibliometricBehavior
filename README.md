@@ -65,10 +65,10 @@ Network Analysis Findings
 │   │   └── keyword_authors_data.ipynb  <- create keyword and author datasets
 │   │   └── network_analysis_Uroch.ipynb  <- centrality measures for author and keyword networks
 │   │   └── RepositoryTrendAnalysis.ipynb  <- compare trend analyses
-│   └── data                         <- Cleaned and processed data
-│       ├── authors.csv
-│       ├── keywords.csv
-│       └── repositories_core.csv
+│   │   └── data                         <- folder with Cleaned and processed data
+│           ├── authors.csv
+│           ├── keywords.csv
+│           └── repositories_core.csv
 │              
 └── docs                           
     ├── assets                      <- Folder for images and additional graphic assets
