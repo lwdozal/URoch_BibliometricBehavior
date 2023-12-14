@@ -1,0 +1,49 @@
+---
+# title: "ERGMnetworks"
+# author: "Laura Dozal"
+# date: "December 14, 2023"
+output: html_document
+---
+
+## ERGM
+
+*"...how can we know how our observed network density compares to chance?"*
+
+With ERGMs, we ask: given a sample of networks with like characteristics as the observed network (g(y)), what is the likelihood that these simulations produce the observed network? ... we can compare the observed network statistics with statistics from simulated networks with like characteristics.
+
+ERGMs attempt to bring a linear modeling approach to network estimation by assuming that these inherent interdependencies depend mostly on network characteristics that a savvy modeler can explicitly specify. 
+
+**Network density** is the ratio of the number of edges to the maximum possible number of edges
+
+
+*Quotes from:* https://medium.com/@ben.roston/exponential-random-graph-models-ergms-network-analysis-and-you-2d7d756345e8
+
+https://socialabstractions-blog.tumblr.com/post/53391947460/exponential-random-graph-models-in-python
+
+```{r load_libraries}
+library(dplyr)
+library(igraph)
+# install.packages('network')
+library(network)
+```
+
+```{r load data}
+
+# load .csv
+data <- read.csv("data/keywords.csv")
+head(data)
+```
+
+```{r}
+# select the Source and Destination airport columns
+keyword_edgelist <- data %>%
+  select(keywords, publisher_categories)
+
+# rename columns to work with igraph functions
+colnames(keyword_edgelist) <- c("source", "target")
+
+# load edgelist into an networkobject
+keywords <- network(keyword_edgelist, loops = TRUE, multiple = TRUE)
+keywords
+```
+
