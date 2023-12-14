@@ -13,6 +13,6 @@ Attempt to analyze researcher behaviors to understand who is depositing data, wh
 Using APIs, refine data collection techniques and conduct analyses on University of Rochester researcher data deposits in disciplinary data repositories. 
 
 
-![alt text](metadata_process.png "Metatdata Data Analysis Process")
+![alt text](code/images/metadata_process.png "Metatdata Data Analysis Process")
 
 
