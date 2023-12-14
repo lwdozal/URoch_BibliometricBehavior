@@ -43,13 +43,21 @@ Data Mining Findings for keywords and researcher
 
 The **keywords** chemical sciences, biological sciences, and biomedical and clinical sciences all have high appearances in repositories. The total number of appearances range from 140 to 240. 
 
-![alt text](docs/assets/keywordTopicsPerRepository.png "Metatdata Data Analysis Process")
+![alt text](docs/assets/keywordTopicsPerRepository.png "Keywords Trends")
 
 Most **researchers** publish in scientific - type repositories. Authors have also only published in one repository, where a little more show begging published in two repositories, and only a handful have published in 5 different repositories. 
 
-![alt text](docs/assets/publishersUsingKeywords.png "Metatdata Data Analysis Process")
+![alt text](docs/assets/publishersUsingKeywords.png "Authors Trend")
 
 Network Analysis Findings
+
+Betweenness Centrality assumes that important nodes are between many nodes and node pairings, meaning that these nodes provide a high number of connections to other nodes in the network.  
+
+![alt text](docs/assets/keyword_betweennessCentrality.png "Keywords Network, BC")
+Our keyword network shows that the nodes Math/physics/computerScience (BC = .055), scientific (BC = .47), 31 biological sciences (BC = 36), sociology and philosophy (BC = .34), and signal processing (BC = .34) have the highest Betweenness Centrality of the network, meaning these nodes are helpful in connecting other nodes to each other.
+
+![alt text](docs/assets/authors_betweennessCentrality.png "Authors Network, BC")
+Because the authors dataset is much larger than keywords, there 45% was randomly removed. Following our trend analysis, we see that "scientific" as a publisher topics has the highest betweenness centrality (BC = 1) followed by authors who have potentially collaborated the most.
 
 ### Open Science for Data Management
 
