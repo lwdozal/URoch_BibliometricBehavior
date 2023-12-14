@@ -1,4 +1,4 @@
-# Bibliometric Data: Publishing Behavior of Rochester University Researchers
+# Bibliometric Data: Publishing Behavior of University of Rochester Researchers
 
 This repository holds data and final analysis for the project, *Bibliometric Data: Publishing Behavior of Rochester University Researchers*. A project hosted by University of Rochester and backed by the LEADING Fellowship from Drexel University.
 
