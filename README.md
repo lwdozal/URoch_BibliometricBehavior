@@ -42,8 +42,10 @@ Worked to make API data usable
 Data Mining Findings for keywords and researcher 
 
 The **keywords** chemical sciences, biological sciences, and biomedical and clinical sciences all have high appearances in repositories. The total number of appearances range from 140 to 240.
+![alt text](docs/assets/keywordTopicsPerRepository.png "Metatdata Data Analysis Process")
 
 Most **researchers** publish in scientific - type repositories. Authors have also only published in one repository, where a little more show begging published in two repositories, and only a handful have published in 5 different repositories.
+![alt text](docs/assets/publishersUsingKeywords.png "Metatdata Data Analysis Process")
 
 Network Analysis Findings
 
