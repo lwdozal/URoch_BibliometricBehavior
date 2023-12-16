@@ -20,21 +20,24 @@ ERGMs attempt to bring a linear modeling approach to network estimation by assum
 
 https://socialabstractions-blog.tumblr.com/post/53391947460/exponential-random-graph-models-in-python
 
-```{r load_libraries}
+```{r load_libraries echo = FALSE}
+
 library(dplyr)
 library(igraph)
 # install.packages('network')
+install.packages('ergm')
+library(ergm)
 library(network)
 ```
 
-```{r load data}
+```{r load data echo = FALSE}
 
 # load .csv
 data <- read.csv("data/keywords.csv")
-head(data)
+# head(data)
 ```
 
-```{r}
+```{r echo=FALSE}
 # select the Source and Destination airport columns
 keyword_edgelist <- data %>%
   select(keywords, publisher_categories)
@@ -43,7 +46,40 @@ keyword_edgelist <- data %>%
 colnames(keyword_edgelist) <- c("source", "target")
 
 # load edgelist into an networkobject
-keywords <- network(keyword_edgelist, loops = TRUE, multiple = TRUE)
-keywords
+kwd <- network(keyword_edgelist, loops = TRUE, multiple = TRUE)
 ```
 
+
+```{r echo=FALSE}
+
+summary(kwd ~ density)
+
+# edge_density(kwd, loops = FALSE)
+
+```
+```{r}
+nsims <- 1000
+
+sim_means <- data.frame(
+  "means" <- vector(length = nsims)
+  )
+
+sample_size <- 20
+
+for (i in 1:nsims) {
+  #get a random sample from the distribution
+  sample_set <- sample(keywords, size = sample_size, replace = TRUE)
+
+  #now store the simulated mean of the random sample 
+  sim_means$means[i] <- mean(sample_set)
+}
+
+#let's plot this
+ggplot2::ggplot(sim_means) +
+  geom_histogram(aes(x = means)) +
+  geom_vline(aes(xintercept = obs_means)) +
+  theme_classic()
+
+
+
+```
