@@ -5,7 +5,13 @@
 output: html_document
 ---
 
-## ERGM
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE) #echo = TRUE, 
+```
+
+
+# ERGMs (Exponential Random Graph Model)
+
 
 *"...how can we know how our observed network density compares to chance?"*
 
@@ -20,66 +26,280 @@ ERGMs attempt to bring a linear modeling approach to network estimation by assum
 
 https://socialabstractions-blog.tumblr.com/post/53391947460/exponential-random-graph-models-in-python
 
-```{r load_libraries echo = FALSE}
+
+```{r load libraries, echo = FALSE, warning=FALSE, message = FALSE}
 
 library(dplyr)
 library(igraph)
 # install.packages('network')
-install.packages('ergm')
+# install.packages('ergm', version = ">= 1.1.1")
+# install.packages('statnet')
 library(ergm)
+library(statnet)
 library(network)
 ```
 
-```{r load data echo = FALSE}
+```{r load data, echo = FALSE}
+
+# remove.packages("rlang")
+# install.packages("rlang")
+
+# remove.packages("vctrs")
+# install.packages("vctrs")
+
+# remove.packages("digest")
+# install.packages("digest")
+# remove.packages("rmarkdown")
+# install.packages("rmarkdown")
 
 # load .csv
 data <- read.csv("data/keywords.csv")
+authors <- read.csv("data/authors.csv")
 # head(data)
 ```
 
-```{r echo=FALSE}
+## Keywords
+```{r create network, echo=FALSE}
 # select the Source and Destination airport columns
 keyword_edgelist <- data %>%
   select(keywords, publisher_categories)
+# print(head(keyword_edgelist))
 
 # rename columns to work with igraph functions
 colnames(keyword_edgelist) <- c("source", "target")
-
+# print(keyword_edgelist)
 # load edgelist into an networkobject
-kwd <- network(keyword_edgelist, loops = TRUE, multiple = TRUE)
+kwd <- network(keyword_edgelist, loops = FALSE, multiple = TRUE)
+# summary(kwd)
+# class(kwd)
 ```
 
 
-```{r echo=FALSE}
+```{r review network density, echo=FALSE, warning=FALSE, include=FALSE}
 
-summary(kwd ~ density)
+require(statnet)
+kwd_graph <- graph(cbind(keyword_edgelist$source, keyword_edgelist$target))
+print(kwd_graph)
+kwd_gMemb <- kwd_graph$membership
+kwd_gCsize <- kwd_graph$csize
+kwd_gCount <- kwd_graph$no
+# statnet::gden(kwd_gCsize)
+# components(kwd)
 
-# edge_density(kwd, loops = FALSE)
+# centralization.betweenness(kwd_graph)
+# centralization.closeness(kwd_graph)
+# centralization.degree(kwd_graph)
 
 ```
-```{r}
-nsims <- 1000
 
-sim_means <- data.frame(
-  "means" <- vector(length = nsims)
-  )
+### Review Network Connections
+Let's take a look at our keyword network which has 273 edges, no pairs nor triads.
+```{r edges, echo=FALSE, warning=FALSE, message = FALSE}
 
-sample_size <- 20
-
-for (i in 1:nsims) {
-  #get a random sample from the distribution
-  sample_set <- sample(keywords, size = sample_size, replace = TRUE)
-
-  #now store the simulated mean of the random sample 
-  sim_means$means[i] <- mean(sample_set)
-}
-
-#let's plot this
-ggplot2::ggplot(sim_means) +
-  geom_histogram(aes(x = means)) +
-  geom_vline(aes(xintercept = obs_means)) +
-  theme_classic()
-
+#how many edges does our network have?
+summary(kwd ~ edges)
+#how many paired connections does the network have?
+summary(kwd ~ cycle(k = 2))
+#how many triad connections does the network have?
+summary(kwd ~ cycle(k = 3))
 
 
 ```
+
+### Apply ERGM Model
+Here our Maximum Likelihood for edges is -5.01 which is essentially our slope, meaning the frequency of keyword connections decrease. We can see this with the MCMC simulations in the next chunck.
+```{r ergm model, echo=FALSE, warning=FALSE, message = FALSE}
+
+#create our ERGM model using edges
+# set a seed to control for ranomization
+kwd_ergm <- ergm(kwd ~ edges,
+               control=control.ergm(seed=40))
+# review the Maximum likelihood
+kwd_ergm
+
+```
+
+### Simulate networks to validate the ERGM Model
+Here we pull a simulated network to show predicted attributes for #20. Plots for  Random Simulated Network #20, #53, and #80 are also below.
+```{r ergm simulations, echo=FALSE, warning=FALSE, message = FALSE}
+
+
+#now create simulations of our model to validate our findings
+# Bootstrapping - here we simulate 100 networks
+kwd_ergm_sims <- simulate(
+  kwd_ergm, 
+  nsim = 100,
+  control = control.simulate.ergm(
+    MCMC.burnin = 5000000,
+    MCMC.interval = 25000
+  ),
+  verbose = FALSE
+  
+)
+#select a random simulated network to check its attributes
+kwd_ergm_sims[[20]]
+plot(kwd_ergm_sims[[20]], main = "Random Simulated Network #20")
+plot(kwd_ergm_sims[[20]], main = "Random Simulated Network #53")
+plot(kwd_ergm_sims[[87]], main = "Random Simulated Network #87")
+
+```
+
+
+### Histograms of Connections in our 100 Similated Networks
+
+Below we see the number of pairs and triads from our similated networks for our keywords has a higher frequency of zero or one connection. This coincides with our own network outcomes and so we can validate that our keyword network is a common phenomena. 
+```{r plot simulations, echo=FALSE, warning=FALSE, message = FALSE}
+
+# class(kwd_ergm_sims)
+simulated_n_pair <- sapply(
+  kwd_ergm_sims, 
+  function(sim_network) summary(sim_network ~ cycle(2))
+)
+
+simulated_n_pair <- as.data.frame(simulated_n_pair)
+table_pairs <- table(simulated_n_pair$simulated_n_pair)
+
+barplot(table_pairs,
+        border="#69b3a2", col="white",
+        xlab = 'Paired Connections in 100 Network Simulations',
+        ylab = 'Count',
+        ylim = c(0, 45))
+
+simulated_n_triads <- sapply(
+  kwd_ergm_sims, 
+  function(sim_network) summary(sim_network ~ cycle(3))
+)
+simulated_n_triads <- as.data.frame(simulated_n_triads)
+table_triads <- table(simulated_n_triads$simulated_n_triads)
+barplot(table_triads,
+        border="#69b3a2", col="white",
+        xlab = 'Tryad Connections in 100 Network Simulations',
+        ylab = 'Count',
+        ylim = c(0, 45))
+
+
+```
+
+
+## Authors
+```{r create author network, echo=FALSE}
+# select the Source and Destination airport columns
+authors_edgelist <- authors %>%
+  select(researcher, publisher_categories)
+# print(head(authors_edgelist))
+
+# rename columns to work with igraph functions
+colnames(authors_edgelist) <- c("source", "target")
+# print(authors_edgelist)
+# load edgelist into an networkobject
+researcher <- network(authors_edgelist, loops = FALSE, multiple = TRUE)
+# summary(researcher)
+# class(researcher)
+```
+
+
+```{r review authro network density, echo=FALSE, warning=FALSE, include=FALSE}
+
+require(statnet)
+researcher_graph <- graph(cbind(authors_edgelist$source, authors_edgelist$target))
+print(researcher_graph)
+researcher_gMemb <- researcher_graph$membership
+researcher_gCsize <- researcher_graph$csize
+researcher_gCount <- researcher_graph$no
+# statnet::gden(kwd_gCsize)
+components(researcher)
+
+# centralization.betweenness(kwd_graph)
+# centralization.closeness(kwd_graph)
+# centralization.degree(kwd_graph)
+
+```
+
+### Review Network Connections
+Let's take a look at our researcher network which has 273 edges, no pairs nor triads.
+```{r author edges, echo=FALSE, warning=FALSE, message = FALSE}
+
+#how many edges does our network have?
+summary(researcher ~ edges)
+#how many paired connections does the network have?
+summary(researcher ~ cycle(k = 2))
+#how many triad connections does the network have?
+summary(researcher ~ cycle(k = 3))
+
+
+```
+
+### Apply ERGM Model
+Here our Maximum Likelihood for edges is -8.77 which is essentially our slope, meaning the frequency of researcher connections decrease. We can see this with the MCMC simulations in the next chunck.
+```{r authro ergm model, echo=FALSE, warning=FALSE, message = FALSE}
+
+#create our ERGM model using edges
+# set a seed to control for ranomization
+researcher_ergm <- ergm(researcher ~ edges,
+               control=control.ergm(seed=40))
+# review the Maximum likelihood
+researcher_ergm
+
+```
+
+### Simulate networks to validate the ERGM Model
+Here we pull a simulated network to show predicted attributes for #20. Plots for  Random Simulated Network #20, #53, and #80 are also below.
+```{r author ergm simulations, echo=FALSE, warning=FALSE, message = FALSE}
+
+
+#now create simulations of our model to validate our findings
+# Bootstrapping - here we simulate 100 networks
+researcher_ergm_sims <- simulate(
+  researcher_ergm, 
+  nsim = 100,
+  control = control.simulate.ergm(
+    MCMC.burnin = 5000000,
+    MCMC.interval = 25000
+  ),
+  verbose = FALSE
+  
+)
+#select a random simulated network to check its attributes
+researcher_ergm_sims[[20]]
+plot(researcher_ergm_sims[[20]], main = "Random Simulated Network #20")
+plot(researcher_ergm_sims[[20]], main = "Random Simulated Network #53")
+plot(researcher_ergm_sims[[87]], main = "Random Simulated Network #87")
+
+```
+
+
+### Histograms of Connections in our 100 Similated Networks
+
+Below we see the number of pairs and triads from our similated networks for our Researchers has a higher frequency of zero or one connection. This coincides with our own network outcomes and so we can validate that our keyword network is a common phenomena. 
+```{r plot author simulations, echo=FALSE, warning=FALSE, message = FALSE}
+
+# class(kwd_ergm_sims)
+simulated_n_pair <- sapply(
+  researcher_ergm_sims, 
+  function(sim_network) summary(sim_network ~ cycle(2))
+)
+
+simulated_n_pair <- as.data.frame(simulated_n_pair)
+table_pairs <- table(simulated_n_pair$simulated_n_pair)
+
+barplot(table_pairs,
+        border="#69b3a2", col="white",
+        xlab = 'Paired Connections in 100 Network Simulations',
+        ylab = 'Count',
+        ylim = c(0, 85))
+
+simulated_n_triads <- sapply(
+  researcher_ergm_sims, 
+  function(sim_network) summary(sim_network ~ cycle(3))
+# )
+simulated_n_triads <- as.data.frame(simulated_n_triads)
+table_triads <- table(simulated_n_triads$simulated_n_triads)
+barplot(table_triads,
+        border="#69b3a2", col="white",
+        xlab = 'Tryad Connections in 100 Network Simulations',
+        ylab = 'Count',
+        ylim = c(0, 85))
+
+
+```
+
